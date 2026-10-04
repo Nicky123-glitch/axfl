@@ -147,6 +147,8 @@ initRows();
 */
 const AXFL_SUPABASE_URL = 'https://cnnqkvowlzksqlmivinz.supabase.co';
 const AXFL_SUPABASE_ANON_KEY = 'sb_publishable_rkqtEPIIiC3WtZMTQaHK-g_7EdhJw7J';
+// AXFL admin account UUID
+const AXFL_ADMIN_USER_ID = '0cb02103-c133-4898-a3db-3e9a537ff296';
 let axflSupabase = null;
 let axflIsAdmin = false;
 let axflSession = null;
@@ -171,11 +173,25 @@ async function axflInitSecure(){
   const {data:{session}}=await axflSupabase.auth.getSession(); axflSession=session;
   await axflRefreshAdmin();
   axflSupabase.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{axflSession=session;if(_event==='PASSWORD_RECOVERY')showPasswordRecovery();await axflRefreshAdmin()},0)});
+  // Supabase recovery links can return with the recovery token already restored
+  // without firing PASSWORD_RECOVERY again after the page has loaded. Detect the
+  // recovery marker in the URL so the password form is shown on desktop/mobile.
+  if((window.location.hash||'').includes('type=recovery') || (window.location.search||'').includes('type=recovery')){
+    showPasswordRecovery();
+  }
   await axflLoadPublicData();
 }
 async function axflRefreshAdmin(){
   axflIsAdmin=false;
-  if(axflSession){const {data,error}=await axflSupabase.from('admin_users').select('user_id').eq('user_id',axflSession.user.id).maybeSingle();axflIsAdmin=!!data&&!error;}
+  if(axflSession){
+    // The signed-in Supabase user must match the AXFL admin UUID.
+    if(axflSession.user.id===AXFL_ADMIN_USER_ID){
+      axflIsAdmin=true;
+    }else{
+      const {data,error}=await axflSupabase.from('admin_users').select('user_id').eq('user_id',axflSession.user.id).maybeSingle();
+      axflIsAdmin=!!data&&!error;
+    }
+  }
   axflSetAdminUI();
 }
 async function adminLogin(){
