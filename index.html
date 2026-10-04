@@ -183,8 +183,6 @@ async function saveResultsAdmin(){if(!axflIsAdmin)return alert('Admin login requ
 async function saveHistoryAdmin(){if(!axflIsAdmin)return alert('Admin login required.');const h=document.getElementById('adminHistoryText').value.trim();axflLeagueData.history=h;if(await axflSaveLeagueSetting('league_history',h)){renderLeagueData();alert('League history saved.')}}
 async function axflLoadLeagueData(){if(!axflSupabase)return;const {data,error}=await axflSupabase.from('site_settings').select('key,value').in('key',['team_standings','stat_leaders','game_results','league_history']);if(error){console.warn(error);renderLeagueData();return;}for(const x of data||[]){try{const v=typeof x.value==='string'?JSON.parse(x.value):x.value;if(x.key==='team_standings'&&Array.isArray(v))axflLeagueData.standings=AXFL_DEFAULT_STANDINGS.map((d,i)=>({...d,...(v[i]||{})}));if(x.key==='stat_leaders'&&v)axflLeagueData.leaders={...AXFL_DEFAULT_LEADERS,...v};if(x.key==='game_results'&&Array.isArray(v))axflLeagueData.results=AXFL_DEFAULT_RESULTS.map((d,i)=>({...d,...(v[i]||{})}));if(x.key==='league_history')axflLeagueData.history=typeof v==='string'?v:'';}catch(e){console.warn('Could not parse',x.key,e)}}renderLeagueData();}
 
-renderLeagueData();
-
 /* ================= SECURE AXFL ADMIN =================
    1) Create a Supabase project.
    2) Put your Project URL and anon key below.
@@ -241,12 +239,33 @@ async function axflRefreshAdmin(){
   }
   axflSetAdminUI();
 }
+async function axflEnsureSupabase(){
+  if(!axflConfigured()) throw new Error('Supabase is not configured.');
+  if(axflSupabase)return axflSupabase;
+  if(typeof supabase==='undefined') throw new Error('Supabase library did not load. Refresh the page and try again.');
+  axflSupabase=supabase.createClient(AXFL_SUPABASE_URL,AXFL_SUPABASE_ANON_KEY);
+  return axflSupabase;
+}
 async function adminLogin(){
-  if(!axflConfigured())return alert('Supabase is not configured yet. Add the project URL and anon key to this file.');
-  const email=document.getElementById('adminEmail').value.trim(),password=document.getElementById('adminPassword').value;
-  if(!email||!password)return alert('Enter your admin email and password.');
-  const {error}=await axflSupabase.auth.signInWithPassword({email,password}); if(error)return alert(error.message);
-  document.getElementById('adminPassword').value='';
+  const status=document.getElementById('authStatus');
+  const email=document.getElementById('adminEmail').value.trim();
+  const password=document.getElementById('adminPassword').value;
+  if(!email||!password){if(status)status.textContent='Enter your email and password.';return alert('Enter your admin email and password.');}
+  try{
+    if(status)status.textContent='Signing in...';
+    const client=await axflEnsureSupabase();
+    const {data,error}=await client.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    axflSession=data.session||null;
+    await axflRefreshAdmin();
+    document.getElementById('adminPassword').value='';
+    if(status)status.textContent=axflIsAdmin?'Signed in successfully.':'Signed in, but this account is not an AXFL admin.';
+    if(!axflIsAdmin)alert('This Gmail signed in, but it is not authorized as an AXFL admin.');
+  }catch(error){
+    console.error('AXFL admin login error:',error);
+    if(status)status.textContent='Sign-in failed: '+(error?.message||'Unknown error');
+    alert('Sign-in failed: '+(error?.message||'Unknown error'));
+  }
 }
 async function adminLogout(){if(axflSupabase)await axflSupabase.auth.signOut();}
 function showPasswordRecovery(){const box=document.getElementById('passwordRecovery');if(box)box.style.display='block';}
