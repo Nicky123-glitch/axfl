@@ -9,6 +9,7 @@
 .adminGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.adminCard{min-height:190px;display:flex;flex-direction:column;justify-content:space-between}.fileInput{width:100%;padding:12px;border:1px dashed var(--line);border-radius:10px;background:#111;color:var(--white)}.emptyState{max-width:760px}.mvpAdd{margin-top:14px}.customSection{position:relative}.deleteBtn{margin-top:12px}.affiliateActions{margin-top:12px}.smallInput{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#101010;color:var(--white)}
 </style><style>
 #adminAuth{display:none;margin-bottom:18px}.authBox{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.authBox input{min-width:220px}.authStatus{font-size:13px;color:#aaa}.adminLocked{opacity:.55;pointer-events:none;filter:grayscale(.4)}
+#passwordRecovery{display:none;margin-top:12px}.recoveryBox{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.recoveryBox input{min-width:220px}
 
 /* AXFL visual refresh */
 :root{--axfl-red:#e3182b;--axfl-red-dark:#8e0d19;--axfl-ink:#07080b;--axfl-panel:rgba(13,14,18,.9);--axfl-line:rgba(255,255,255,.1)}
@@ -114,7 +115,7 @@ main{max-width:1180px}
     <div class="card competeCard"><div class="competeNumber">03</div><h3>League Format</h3><div class="competeMain">8v8 • 7v7</div><p>Football Legends League</p></div>
   </div>
 </section><section id="schedule" class="page"><div class="sectionHead"><div><h2>Schedule</h2><p>No games posted.</p></div></div><div class="card emptyState"><h3>Schedule</h3><p>Schedule updates will appear here.</p></div></section><section id="awards" class="page"><div class="sectionHead"><div><h2>Awards</h2><p>AXFL season honors.</p></div></div><div class="grid"><div class="card"><h3>Offensive Player of the Year</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>MVP</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>Defensive Player of the Year</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>Kicker of the Year</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>QBOTY</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>Tight End of the Year</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>OLine of the Year</h3><div class="blank">Winner TBD</div></div><div class="card"><h3>MIP</h3><div class="blank">Winner TBD</div></div></div></section><section id="affiliates" class="page"><div class="sectionHead"><div><h2>League Affiliates</h2><p>AXFL league network.</p></div></div><div class="grid"><div class="card"><h3>FL History</h3><p>AXFL history, records, eras, and key moments.</p><span class="badge">AFFILIATE 01</span></div><div class="card"><h3>Affiliate 02</h3><p>More affiliates coming soon.</p><span class="badge">COMING SOON</span></div><div class="card"><h3>Affiliate 03</h3><p>More affiliates coming soon.</p><span class="badge">COMING SOON</span></div></div></section><section id="admin" class="page"><div class="sectionHead"><div><h2>AXFL Admin</h2><p>League control</p></div><span id="adminBadge" class="badge">LOCKED</span></div>
-<div id="adminAuth" class="card"><h3>Admin Login</h3><p>Restricted area</p><div class="authBox"><input id="adminEmail" class="cellInput" type="email" placeholder="Admin email"><input id="adminPassword" class="cellInput" type="password" placeholder="Password"><button class="cta primary" onclick="adminLogin()">SIGN IN</button><button class="cta" onclick="adminLogout()">SIGN OUT</button><span id="authStatus" class="authStatus">Not signed in.</span></div></div>
+<div id="adminAuth" class="card"><h3>Admin Login</h3><p>Restricted area</p><div class="authBox"><input id="adminEmail" class="cellInput" type="email" placeholder="Admin email"><input id="adminPassword" class="cellInput" type="password" placeholder="Password"><button class="cta primary" onclick="adminLogin()">SIGN IN</button><button class="cta" onclick="adminLogout()">SIGN OUT</button><span id="authStatus" class="authStatus">Not signed in.</span></div><div id="passwordRecovery"><h3>Set a new password</h3><p>Choose a new password for your AXFL admin account.</p><div class="recoveryBox"><input id="newAdminPassword" class="cellInput" type="password" placeholder="New password"><input id="newAdminPassword2" class="cellInput" type="password" placeholder="Confirm password"><button class="cta primary" onclick="finishPasswordRecovery()">UPDATE PASSWORD</button></div></div></div>
 <div id="adminControls" class="adminGrid adminLocked"><div class="card adminCard"><h3>Site Sections</h3><p>Site sections.</p><button class="cta primary" onclick="addSection()">+ Add Section</button></div><div class="card adminCard"><h3>MVP Race</h3><p>MVP race.</p><button class="cta primary" onclick="addMVPCandidate()">+ Add MVP Candidate</button></div><div class="card adminCard"><h3>League Affiliates</h3><p>League affiliate.</p><button class="cta primary" onclick="addAffiliate()">+ Add Affiliate</button></div><div class="card adminCard"><h3>Home Picture</h3><p>Update the homepage image.</p><input id="homePictureInput" class="fileInput" type="file" accept="image/*" onchange="changeHomePicture(event)"></div><div class="card adminCard"><h3>Home Background</h3><p>Update the site background.</p><input id="homeBackgroundInput" class="fileInput" type="file" accept="image/*" onchange="changeHomeBackground(event)"></div><div class="card adminCard"><h3>Reset Browser Edits</h3><p>Reset local changes.</p><button class="cta" onclick="resetSiteEdits()">RESET EDITS</button></div></div></section></main></div><footer>AXFL • COMPETE • IMPROVE • MAKE YOUR MARK</footer><script>
 const tabs=[...document.querySelectorAll('.tab')],pages=[...document.querySelectorAll('.page')];
 function show(id){pages.forEach(p=>p.classList.toggle('active',p.id===id));tabs.forEach(t=>t.classList.toggle('active',t.dataset.page===id));window.scrollTo({top:0,behavior:'smooth'})}
@@ -169,7 +170,7 @@ async function axflInitSecure(){
   axflSupabase=supabase.createClient(AXFL_SUPABASE_URL,AXFL_SUPABASE_ANON_KEY);
   const {data:{session}}=await axflSupabase.auth.getSession(); axflSession=session;
   await axflRefreshAdmin();
-  axflSupabase.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{axflSession=session;await axflRefreshAdmin()},0)});
+  axflSupabase.auth.onAuthStateChange((_event,session)=>{setTimeout(async()=>{axflSession=session;if(_event==='PASSWORD_RECOVERY')showPasswordRecovery();await axflRefreshAdmin()},0)});
   await axflLoadPublicData();
 }
 async function axflRefreshAdmin(){
@@ -185,6 +186,20 @@ async function adminLogin(){
   document.getElementById('adminPassword').value='';
 }
 async function adminLogout(){if(axflSupabase)await axflSupabase.auth.signOut();}
+function showPasswordRecovery(){const box=document.getElementById('passwordRecovery');if(box)box.style.display='block';}
+async function finishPasswordRecovery(){
+  if(!axflSupabase)return alert('Supabase is not configured.');
+  const a=document.getElementById('newAdminPassword').value;
+  const b=document.getElementById('newAdminPassword2').value;
+  if(!a||a.length<6)return alert('Use a password with at least 6 characters.');
+  if(a!==b)return alert('The passwords do not match.');
+  const {error}=await axflSupabase.auth.updateUser({password:a});
+  if(error)return alert(error.message);
+  document.getElementById('newAdminPassword').value='';
+  document.getElementById('newAdminPassword2').value='';
+  const box=document.getElementById('passwordRecovery');if(box)box.style.display='none';
+  alert('Password updated. You can now sign in with your new password.');
+}
 function axflStatPayload(row){
   const vals=[...row.querySelectorAll('input')]; const player=vals.shift()?.value.trim()||''; const stats={};
   const names=['cmp','att','yds','td','int','rec','rec_yds','rush','rush_yds','td_off','tck','tfl','sack','int_def','pbu','fg','fga','xp','xpa'];
